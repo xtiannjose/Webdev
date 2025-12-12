@@ -1,0 +1,86 @@
+[
+  {
+    "id": "men-tee-1",
+    "name": "Roots of Loyalty Tee",
+    "price": 380,
+    "image": "/mens/10f84550-41c3-414a-98f1-fbe6a01a866c.jpg",
+    "tag": "Men"
+  },
+  {
+    "id": "women-hoodie-1",
+    "name": "Seaside Pastel Hoodie",
+    "price": 420,
+    "image": "/womens/32882a40-22e9-4651-b9af-d958363b4649.jpg",
+    "tag": "Women"
+  },
+  {
+    "id": "men-zip-1",
+    "name": "Wash Cotton Half Zip Polo Shirt",
+    "price": 590,
+    "image": "/mens/4d53bc77-16bb-4e92-8205-4d8e8ddb08e5.jpg",
+    "tag": "Men"
+  },
+  {
+    "id": "women-dress-1",
+    "name": "Breeze Summer Dress",
+    "price": 480,
+    "image": "/womens/b5e6ce57-02a1-4538-b182-aa4b8f266899.jpg",
+    "tag": "Women"
+  },
+  {
+    "id": "men-tee-2",
+    "name": "Primal Rose Tee",
+    "price": 460,
+    "image": "/mens/07758d4f-8317-41c3-8d19-4cb60ba9ca5a.jpg",
+    "tag": "Men"
+  },
+  {
+    "id": "men-hoodie-1",
+    "name": "Tanjiro + Nezuko Hoodie",
+    "price": 500,
+    "image": "/mens/4d53bc77-16bb-4e92-8205-4d8e8ddb08e5.jpg",
+    "tag": "Men"
+  },
+  {
+    "id": "men-jeans-1",
+    "name": "Slate Jeans",
+    "price": 360,
+    "image": "/mens/662b6f78-e2b4-4bfd-be61-c3b9084fca4f.jpg",
+    "tag": "Men"
+  },
+  {
+    "id": "men-cargo-1",
+    "name": "Crescent Cargo Pants",
+    "price": 420,
+    "image": "/mens/a4ff4db1-c2e2-4455-a76d-606c187cf54f.jpg",
+    "tag": "Men"
+  },
+  {
+    "id": "women-top-1",
+    "name": "Sunrise Knit Top",
+    "price": 380,
+    "image": "/womens/9d0027dc-65c2-4e56-9ea7-d5447352e608.jpg",
+    "tag": "Women"
+  },
+  {
+    "id": "women-hoodie-2",
+    "name": "Garden Stroll Hoodie",
+    "price": 450,
+    "image": "/womens/ca0c54f7-8129-41cf-a9fb-fbf109ace73b.jpg",
+    "tag": "Women"
+  },
+  {
+    "id": "women-tee-1",
+    "name": "Weekend Lounge Tee",
+    "price": 360,
+    "image": "/womens/cb956d59-27be-4f67-a091-d2f85332949f.jpg",
+    "tag": "Women"
+  },
+  {
+    "id": "women-crew-1",
+    "name": "City Drive Crewneck",
+    "price": 400,
+    "image": "/womens/f035bf05-7525-4f18-957e-488c96284908.jpg",
+    "tag": "Women"
+  }
+]
