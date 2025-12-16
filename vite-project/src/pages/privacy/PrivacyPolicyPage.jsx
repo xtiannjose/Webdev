@@ -1,3 +1,5 @@
+import { useNavigate } from 'react-router-dom'
+
 const sections = [
   {
     title: 'Data we collect',
@@ -25,7 +27,8 @@ const sections = [
   },
 ]
 
-export function PrivacyPolicyPage({ onNavigate }) {
+export function PrivacyPolicyPage() {
+  const navigate = useNavigate()
   return (
     <section className="space-y-8">
       <div className="space-y-3">
@@ -57,14 +60,14 @@ export function PrivacyPolicyPage({ onNavigate }) {
           <button
             type="button"
             className="rounded-full bg-white px-5 py-2 font-semibold text-neutral-900 transition hover:-translate-y-0.5 hover:shadow"
-            onClick={() => onNavigate?.('contact')}
+            onClick={() => navigate('/contact')}
           >
             Contact support
           </button>
           <button
             type="button"
             className="rounded-full border border-neutral-700 px-5 py-2 font-semibold text-neutral-50 transition hover:-translate-y-0.5 hover:border-neutral-500"
-            onClick={() => onNavigate?.('terms')}
+            onClick={() => navigate('/terms')}
           >
             View terms
           </button>

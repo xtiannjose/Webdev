@@ -1,10 +1,12 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { useToast } from '../../context/ToastContext.jsx'
 
-export function AuthPage({ onNavigate }) {
+export function AuthPage() {
   const { signup, login, user, logout } = useAuth()
   const { addToast } = useToast()
+  const navigate = useNavigate()
   const [mode, setMode] = useState('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -21,7 +23,7 @@ export function AuthPage({ onNavigate }) {
         await signup(email, password)
         addToast('Account created')
       }
-      onNavigate?.('home')
+      navigate('/')
     } catch (err) {
       addToast(err.message || 'Auth failed', 'error')
     } finally {

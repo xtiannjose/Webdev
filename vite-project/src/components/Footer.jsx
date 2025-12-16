@@ -1,28 +1,30 @@
-export function Footer({ onNavigate }) {
+import { Link } from 'react-router-dom'
+
+export function Footer() {
   const footerLinks = [
     {
       title: 'Shop',
       links: [
-        { label: 'Men', page: 'men' },
-        { label: 'Women', page: 'women' },
+        { label: 'Men', to: '/men' },
+        { label: 'Women', to: '/women' },
       ],
     },
     {
       title: 'Support',
       links: [
-        { label: 'FAQ', page: 'support' },
-        { label: 'Contact', page: 'contact' },
-        { label: 'Return Policy', page: 'returns' },
-        { label: 'About', page: 'about' },
+        { label: 'FAQ', to: '/support' },
+        { label: 'Contact', to: '/contact' },
+        { label: 'Return Policy', to: '/returns' },
+        { label: 'About', to: '/about' },
       ],
     },
   ]
 
   const socialLinks = [
-    { label: 'Instagram', page: 'home', icon: 'instagram' },
-    { label: 'TikTok', page: 'home', icon: 'tiktok' },
-    { label: 'Lazada', page: 'home', icon: 'lazada' },
-    { label: 'Shoppee', page: 'home', icon: 'shoppee' },
+    { label: 'Instagram', to: '/', icon: 'instagram' },
+    { label: 'TikTok', to: '/', icon: 'tiktok' },
+    { label: 'Lazada', to: '/', icon: 'lazada' },
+    { label: 'Shoppee', to: '/', icon: 'shoppee' },
   ]
 
   return (
@@ -34,32 +36,26 @@ export function Footer({ onNavigate }) {
               <div className="font-semibold">{column.title}</div>
               <div className="flex flex-col gap-2 text-xs text-neutral-600">
                 {column.links.map((link) => (
-                  <button
-                    key={link.label}
-                    type="button"
-                    className="flex items-center gap-2 text-left transition hover:text-neutral-900"
-                  onClick={() => onNavigate(link.page)}
-                >
-                  {link.icon && <Icon name={link.icon} className="h-4 w-4" />}
-                  <span>{link.label}</span>
-                </button>
-              ))}
+                  <Link key={link.label} to={link.to} className="flex items-center gap-2 text-left transition hover:text-neutral-900">
+                    {link.icon && <Icon name={link.icon} className="h-4 w-4" />}
+                    <span>{link.label}</span>
+                  </Link>
+                ))}
+              </div>
             </div>
-          </div>
           ))}
           <div className="space-y-3 text-center md:text-left">
             <div className="font-semibold md:text-left">Connect</div>
             <div className="flex flex-wrap items-center justify-center gap-3 md:justify-start">
               {socialLinks.map((link) => (
-                <button
+                <Link
                   key={link.label}
-                  type="button"
+                  to={link.to}
                   className="rounded-full border border-neutral-200 p-2 text-neutral-600 transition hover:border-neutral-400 hover:text-neutral-900"
-                  onClick={() => onNavigate(link.page)}
                   aria-label={link.label}
                 >
                   <Icon name={link.icon} className="h-4 w-4" />
-                </button>
+                </Link>
               ))}
             </div>
           </div>
@@ -67,21 +63,13 @@ export function Footer({ onNavigate }) {
         <div className="flex flex-col justify-between gap-4 text-[11px] text-neutral-500 md:flex-row md:items-center">
           <span>© 2025 All rights reserved</span>
           <div className="flex flex-wrap items-center gap-4">
-            <button
-              type="button"
-              className="transition hover:text-neutral-900"
-              onClick={() => onNavigate('terms')}
-            >
+            <Link to="/terms" className="transition hover:text-neutral-900">
               Terms &amp; Condition
-            </button>
+            </Link>
             <span aria-hidden className="text-neutral-300">•</span>
-            <button
-              type="button"
-              className="transition hover:text-neutral-900"
-              onClick={() => onNavigate('privacy')}
-            >
+            <Link to="/privacy" className="transition hover:text-neutral-900">
               Privacy Policy
-            </button>
+            </Link>
           </div>
         </div>
       </div>

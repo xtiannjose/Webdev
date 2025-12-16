@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useProducts } from '../../hooks/useProducts.js'
 
 const heroImages = [
@@ -29,10 +30,11 @@ const categories = [
   { label: 'Accessories', image: '/womens/cb956d59-27be-4f67-a091-d2f85332949f.jpg', page: 'women' },
 ]
 
-export function HomePage({ onNavigate }) {
+export function HomePage() {
   const [index, setIndex] = useState(0)
+  const navigate = useNavigate()
   const currentImage = useMemo(() => heroImages[index % heroImages.length], [index])
-  const { products: apiProducts } = useProducts()
+  const { products: apiProducts, loading, error } = useProducts()
   const featured = apiProducts.length ? apiProducts : featuredProducts
 
   useEffect(() => {
@@ -47,19 +49,13 @@ export function HomePage({ onNavigate }) {
       <section className="grid items-stretch gap-10 md:grid-cols-2 md:gap-12">
         <div className="flex flex-col justify-center space-y-6">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-neutral-500">New season</p>
-          <h1 className="text-4xl font-extrabold leading-tight md:text-5xl">Surprise TP ult</h1>
+          <h1 className="text-4xl font-extrabold leading-tight md:text-5xl">Intentional essentials, made for daily wear</h1>
           <p className="max-w-xl text-lg text-neutral-700">
-            Im not saying na may gusto rin sya sayo or may "pag-asa" ka. All im saying is why not try, wala naman
-            mawawala. If it makes you happy then take actions, don't be a pussy. If it fails, at least you tried. Dont
-            let any one stand against your happiness. just be careful, a sentinel is trying to attack behind your back,
-            and keep in mind he knows exactly where you are!
+            Lightweight layers, graphic drops, and relaxed tailoring designed for tropical days and cooler nights. Build easy
+            outfits that move from city runs to late dinners without sacrificing comfort.
           </p>
-          <button
-            type="button"
-            className="pill-button"
-            onClick={() => onNavigate?.('men')}
-          >
-            Explore new December Plot Twist styles
+          <button type="button" className="pill-button" onClick={() => navigate('/men')}>
+            Explore new arrivals
           </button>
         </div>
 
@@ -96,34 +92,44 @@ export function HomePage({ onNavigate }) {
           <button
             type="button"
             className="text-sm font-semibold text-neutral-700 underline underline-offset-4 transition hover:text-neutral-900"
-            onClick={() => onNavigate?.('product')}
+            onClick={() => navigate('/product')}
           >
             View all
           </button>
         </div>
         <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white/70 p-3 shadow-sm">
-          <div className="loop-strip flex gap-4">
-            {[...featured, ...featured].map((item, idx) => (
-              <article
-                key={`${item.name}-${idx}`}
-                className="group w-56 shrink-0 overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
-              >
-                <div className="relative">
-                  <img src={item.image} alt={item.name} loading="lazy" className="h-64 w-full object-cover transition duration-500 group-hover:scale-105" />
-                  <span className="absolute left-3 top-3 rounded-full bg-black/80 px-2 py-1 text-[11px] font-semibold uppercase text-white">
-                    {item.tag}
-                  </span>
-                </div>
-                <div className="space-y-1 px-3 py-3 text-sm">
-                  <div className="font-semibold text-neutral-900">{item.name}</div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold">₱{item.price}</span>
-                    <span className="text-[11px] text-emerald-600">New</span>
+          {loading && (
+            <div className="loop-strip flex gap-4">
+              {Array.from({ length: 8 }).map((_, idx) => (
+                <div key={idx} className="w-56 shrink-0 rounded-xl bg-neutral-100 p-3" />
+              ))}
+            </div>
+          )}
+          {error && <div className="p-3 text-sm text-red-600">Failed to load featured products. Showing defaults.</div>}
+          {!loading && (
+            <div className="loop-strip flex gap-4">
+              {[...featured, ...featured].map((item, idx) => (
+                <article
+                  key={`${item.name}-${idx}`}
+                  className="group w-56 shrink-0 overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+                >
+                  <div className="relative">
+                    <img src={item.image} alt={item.name} loading="lazy" className="h-64 w-full object-cover transition duration-500 group-hover:scale-105" />
+                    <span className="absolute left-3 top-3 rounded-full bg-black/80 px-2 py-1 text-[11px] font-semibold uppercase text-white">
+                      {item.tag}
+                    </span>
                   </div>
-                </div>
-              </article>
-            ))}
-          </div>
+                  <div className="space-y-1 px-3 py-3 text-sm">
+                    <div className="font-semibold text-neutral-900">{item.name}</div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold">₱{item.price}</span>
+                      <span className="text-[11px] text-emerald-600">New</span>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -137,7 +143,7 @@ export function HomePage({ onNavigate }) {
             <button
               key={cat.label}
               type="button"
-              onClick={() => onNavigate?.(cat.page)}
+              onClick={() => navigate(cat.page === 'men' ? '/men' : '/women')}
               className="group relative overflow-hidden rounded-xl bg-neutral-900 p-4 text-left text-white transition hover:-translate-y-1 hover:shadow-xl"
             >
               <img src={cat.image} alt={cat.label} className="absolute inset-0 h-full w-full object-cover opacity-40 transition group-hover:opacity-60" />

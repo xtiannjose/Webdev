@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { useToast } from '../../context/ToastContext.jsx'
 import { fetchOrders } from '../../lib/api.js'
 import { OrderDetailModal } from '../orders/OrderDetailModal.jsx'
 
-export function ProfilePage({ onNavigate }) {
+export function ProfilePage() {
   const { user, logout } = useAuth()
   const { addToast } = useToast()
+  const navigate = useNavigate()
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -53,7 +55,7 @@ export function ProfilePage({ onNavigate }) {
           onClick={() => {
             logout()
             addToast('Signed out')
-            onNavigate?.('home')
+            navigate('/')
           }}
         >
           Sign out

@@ -1,4 +1,4 @@
-export function setOG({ title, description, image }) {
+export function setOG({ title, description, image, url }) {
   const ensure = (name, content) => {
     let el = document.querySelector(`meta[property="${name}"]`) || document.querySelector(`meta[name="${name}"]`)
     if (!el) {
@@ -12,6 +12,7 @@ export function setOG({ title, description, image }) {
   if (title) ensure('og:title', title)
   if (description) ensure('og:description', description)
   if (image) ensure('og:image', image)
+  if (url) ensure('og:url', url)
   ensure('twitter:card', 'summary_large_image')
   if (title) ensure('twitter:title', title)
   if (description) ensure('twitter:description', description)

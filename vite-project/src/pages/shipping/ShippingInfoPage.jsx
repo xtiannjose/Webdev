@@ -1,3 +1,5 @@
+import { useNavigate } from 'react-router-dom'
+
 const shippingOptions = [
   { title: 'Metro Manila', detail: '2-3 business days via partner couriers.' },
   { title: 'Luzon (outside Metro)', detail: '3-5 business days depending on destination.' },
@@ -5,7 +7,8 @@ const shippingOptions = [
   { title: 'International', detail: '10-14 business days; customs duties and taxes may apply.' },
 ]
 
-export function ShippingInfoPage({ onNavigate }) {
+export function ShippingInfoPage() {
+  const navigate = useNavigate()
   return (
     <section className="space-y-8">
       <div className="space-y-3">
@@ -37,14 +40,14 @@ export function ShippingInfoPage({ onNavigate }) {
           <button
             type="button"
             className="rounded-full bg-white px-5 py-2 font-semibold text-neutral-900 transition hover:-translate-y-0.5 hover:shadow"
-            onClick={() => onNavigate?.('contact')}
+            onClick={() => navigate('/contact')}
           >
             Track my order
           </button>
           <button
             type="button"
             className="rounded-full border border-neutral-700 px-5 py-2 font-semibold text-neutral-50 transition hover:-translate-y-0.5 hover:border-neutral-500"
-            onClick={() => onNavigate?.('contact')}
+            onClick={() => navigate('/contact')}
           >
             Contact support
           </button>

@@ -1,13 +1,15 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useStore } from '../../context/StoreContext.jsx'
 import { checkout } from '../../lib/api.js'
 import { useToast } from '../../context/ToastContext.jsx'
 import { useAuth } from '../../context/AuthContext.jsx'
 
-export function CheckoutPage({ onNavigate }) {
+export function CheckoutPage() {
   const { cart, totals } = useStore()
   const { user } = useAuth()
   const { addToast } = useToast()
+  const navigate = useNavigate()
   const [shipping, setShipping] = useState({ name: '', address: '', city: '', country: '', notes: '' })
   const [loading, setLoading] = useState(false)
   const tax = Math.round(totals.subtotal * 0.12)
@@ -17,14 +19,14 @@ export function CheckoutPage({ onNavigate }) {
     e.preventDefault()
     if (!user) {
       addToast('Please sign in to checkout', 'error')
-      onNavigate?.('auth')
+      navigate('/auth')
       return
     }
     setLoading(true)
     try {
       await checkout({ ...shipping, tax, shippingFee })
       addToast('Order placed')
-      onNavigate?.('orders')
+      navigate('/profile')
     } catch (err) {
       addToast(err.message || 'Checkout failed', 'error')
     } finally {

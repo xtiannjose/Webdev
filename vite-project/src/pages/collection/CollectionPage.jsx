@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useProducts } from '../../hooks/useProducts.js'
 
 const drops = [
@@ -34,12 +35,13 @@ const showcase = [
   { title: 'City Drive Crew', image: '/womens/f035bf05-7525-4f18-957e-488c96284908.jpg', price: 400 },
 ]
 
-export function CollectionPage({ onNavigate }) {
+export function CollectionPage() {
+  const navigate = useNavigate()
   const scrollRef = useRef(null)
   const [dragging, setDragging] = useState(false)
   const [startX, setStartX] = useState(0)
   const [scrollLeft, setScrollLeft] = useState(0)
-  const { products: apiProducts } = useProducts()
+  const { products: apiProducts, loading, error } = useProducts()
 
   const onMouseDown = (e) => {
     const el = scrollRef.current
@@ -104,6 +106,8 @@ export function CollectionPage({ onNavigate }) {
               </article>
             ))}
           </div>
+          {loading && <div className="px-3 py-2 text-sm text-neutral-600">Loading products…</div>}
+          {error && <div className="px-3 py-2 text-sm text-red-600">Could not load showcase items.</div>}
         </div>
       </div>
 
@@ -115,11 +119,7 @@ export function CollectionPage({ onNavigate }) {
               <div className="text-lg font-semibold">{drop.title}</div>
               <p className="text-neutral-700">{drop.desc}</p>
             </div>
-            <button
-              type="button"
-              className="pill-button w-full"
-              onClick={() => onNavigate?.(drop.page)}
-            >
+            <button type="button" className="pill-button w-full" onClick={() => navigate(`/${drop.page}`)}>
               {drop.cta}
             </button>
           </article>

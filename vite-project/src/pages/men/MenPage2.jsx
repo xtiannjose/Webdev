@@ -1,3 +1,5 @@
+import { useNavigate } from 'react-router-dom'
+
 const products = [
   {
     name: 'Playful Moments Hoodie',
@@ -8,7 +10,8 @@ const products = [
   },
 ]
 
-export function MenPage2({ onNavigate }) {
+export function MenPage2() {
+  const navigate = useNavigate()
   return (
     <section className="space-y-8">
       <div className="overflow-hidden rounded-xl bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-700 p-8 text-white shadow-lg">
@@ -23,7 +26,7 @@ export function MenPage2({ onNavigate }) {
           <button
             type="button"
             className="self-start rounded-full bg-white px-5 py-3 text-sm font-semibold text-neutral-900 transition hover:-translate-y-0.5 hover:shadow-lg"
-            onClick={() => onNavigate?.('product')}
+            onClick={() => navigate('/product')}
           >
             Shop featured piece
           </button>
@@ -71,7 +74,7 @@ export function MenPage2({ onNavigate }) {
                 <button
                   type="button"
                   className="rounded-full bg-neutral-900 px-4 py-2 text-[11px] font-semibold text-white transition hover:-translate-y-0.5 hover:bg-neutral-800"
-                  onClick={() => onNavigate?.('product')}
+                  onClick={() => navigate('/product')}
                 >
                   View
                 </button>
@@ -85,7 +88,7 @@ export function MenPage2({ onNavigate }) {
         <button
           type="button"
           className="rounded-full border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:-translate-y-0.5 hover:border-neutral-900 hover:text-neutral-900"
-          onClick={() => onNavigate?.('men')}
+          onClick={() => navigate('/men')}
         >
           ← Previous page
         </button>
@@ -93,14 +96,14 @@ export function MenPage2({ onNavigate }) {
           <button
             type="button"
             className="rounded-full border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:-translate-y-0.5 hover:border-neutral-900 hover:text-neutral-900"
-            onClick={() => onNavigate?.('men')}
+            onClick={() => navigate('/men')}
           >
             1
           </button>
           <button
             type="button"
             className="rounded-full border border-neutral-900 bg-neutral-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-            onClick={() => onNavigate?.('men2')}
+            onClick={() => navigate('/men/page-2')}
           >
             2
           </button>

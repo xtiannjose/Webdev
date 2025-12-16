@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 const faqs = (actions) => [
   {
@@ -35,13 +36,14 @@ const sizeGuide = [
   { size: 'XL', chest: '42-44 in', waist: '35-37 in', hips: '45-47 in' },
 ]
 
-export function SupportPage({ onNavigate }) {
+export function SupportPage() {
+  const navigate = useNavigate()
   const [showSizeGuide, setShowSizeGuide] = useState(false)
   const faqItems = faqs({
-    goShipping: () => onNavigate?.('shipping'),
-    goReturns: () => onNavigate?.('returns'),
+    goShipping: () => navigate('/shipping'),
+    goReturns: () => navigate('/returns'),
     openSizeGuide: () => setShowSizeGuide(true),
-    goContact: () => onNavigate?.('contact'),
+    goContact: () => navigate('/contact'),
   })
 
   return (
@@ -119,14 +121,14 @@ export function SupportPage({ onNavigate }) {
               </button>
               <button
                 type="button"
-                className="rounded-full bg-neutral-900 px-4 py-2 font-semibold text-white transition hover:bg-neutral-800"
-                onClick={() => {
-                  setShowSizeGuide(false)
-                  onNavigate?.('contact')
-                }}
-              >
-                Ask for sizing help
-              </button>
+              className="rounded-full bg-neutral-900 px-4 py-2 font-semibold text-white transition hover:bg-neutral-800"
+              onClick={() => {
+                setShowSizeGuide(false)
+                navigate('/contact')
+              }}
+            >
+              Ask for sizing help
+            </button>
             </div>
           </div>
         </div>

@@ -1,3 +1,8 @@
+import { useEffect, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { useStore } from '../../context/StoreContext.jsx'
+import { setJSONLD } from '../../lib/seo.js'
+
 const gallery = [
   { src: '/mens/4d53bc77-16bb-4e92-8205-4d8e8ddb08e5.jpg', alt: 'Half zip polo in blue' },
   { src: '/mens/50aa801b-bae8-4e0c-93a9-550baf3defdc.jpg', alt: 'Half zip polo in charcoal' },
@@ -27,9 +32,17 @@ const freqBought = [
   { title: 'Straight Jeans', price: 1190, image: '/mens/a4ff4db1-c2e2-4455-a76d-606c187cf54f.jpg', tag: 'Men' },
 ]
 
-export function ProductPage({ onNavigate }) {
+const reviews = [
+  { name: 'Miguel T.', rating: 5, size: 'M', body: 'Soft, breathable, and the collar stays sharp after washing.' },
+  { name: 'Hannah L.', rating: 4, size: 'S', body: 'Relaxed fit without looking sloppy. Went one size down.' },
+  { name: 'Carlo R.', rating: 5, size: 'L', body: 'Perfect weight for Manila weather—layerable but not hot.' },
+]
+
+export function ProductPage() {
+  const navigate = useNavigate()
+  const { id } = useParams()
   const product = {
-    id: 'wash-cotton-half-zip',
+    id: id || 'wash-cotton-half-zip',
     name: 'Wash Cotton Half Zip Polo Shirt',
     price: 590,
     compareAt: 1290,
@@ -41,6 +54,40 @@ export function ProductPage({ onNavigate }) {
   const [selectedSize, setSelectedSize] = useState('M')
   const [qty, setQty] = useState(1)
   const [addedOpen, setAddedOpen] = useState(false)
+  const [sizeGuideOpen, setSizeGuideOpen] = useState(false)
+  const [notifyOpen, setNotifyOpen] = useState(false)
+  const stockBySize = { XS: 0, S: 3, M: 5, L: 2, XL: 1, '2XL': 0 }
+  const stockLevel = stockBySize[selectedSize] ?? 0
+  const inStock = stockLevel > 0
+
+  useEffect(() => {
+    const ldProduct = {
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      name: product.name,
+      image: gallery.map((g) => g.src),
+      description: 'Wash cotton half zip polo shirt with breathable fabric and relaxed shoulders.',
+      offers: {
+        '@type': 'Offer',
+        priceCurrency: 'PHP',
+        price: product.price,
+        availability: inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+        itemCondition: 'https://schema.org/NewCondition',
+      },
+      brand: { '@type': 'Brand', name: 'Raku' },
+      sku: product.id,
+    }
+    const breadcrumbs = {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: window.location.origin },
+        { '@type': 'ListItem', position: 2, name: 'Product', item: window.location.href },
+      ],
+    }
+    setJSONLD('ld-product', ldProduct)
+    setJSONLD('ld-breadcrumbs', breadcrumbs)
+  }, [product.id, product.name, product.price, inStock])
 
   const addItem = () => {
     addToCart({
@@ -56,7 +103,7 @@ export function ProductPage({ onNavigate }) {
     setAddedOpen(true)
   }
 
-  const increment = () => setQty((n) => Math.min(n + 1, 4))
+  const increment = () => setQty((n) => Math.min(n + 1, stockLevel || 4))
   const decrement = () => setQty((n) => Math.max(1, n - 1))
 
   return (
@@ -106,11 +153,11 @@ export function ProductPage({ onNavigate }) {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <div className="text-xs uppercase tracking-[0.2em] text-neutral-500">Size</div>
-              <div className="flex flex-wrap gap-2">
-                {sizes.map((size) => (
-                  <button
+              <div className="space-y-2">
+                <div className="text-xs uppercase tracking-[0.2em] text-neutral-500">Size</div>
+                <div className="flex flex-wrap gap-2">
+                  {sizes.map((size) => (
+                    <button
                     key={size}
                     type="button"
                     className={`min-w-[56px] rounded border px-3 py-2 text-xs font-semibold uppercase tracking-wide transition ${
@@ -120,14 +167,18 @@ export function ProductPage({ onNavigate }) {
                     onClick={() => setSelectedSize(size)}
                   >
                     {size}
-                  </button>
-                ))}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  className="text-xs font-semibold text-sky-700 underline-offset-4 hover:underline"
+                  onClick={() => setSizeGuideOpen(true)}
+                >
+                  Check my size
+                </button>
               </div>
-              <button type="button" className="text-xs font-semibold text-sky-700 underline-offset-4 hover:underline">
-                Check my size
-              </button>
             </div>
-          </div>
 
           <div className="flex items-center gap-3">
             <div className="flex items-center rounded-full border border-neutral-300">
@@ -139,7 +190,9 @@ export function ProductPage({ onNavigate }) {
                 +
               </button>
             </div>
-            <p className="text-xs font-semibold text-red-600">Out of stock</p>
+            <p className={`text-xs font-semibold ${inStock ? 'text-emerald-700' : 'text-red-600'}`}>
+              {inStock ? `In stock — ${stockLevel} left` : 'Out of stock'}
+            </p>
           </div>
 
           <div className="flex flex-col gap-2">
@@ -147,12 +200,14 @@ export function ProductPage({ onNavigate }) {
               type="button"
               className="w-full rounded-full bg-neutral-900 px-5 py-3 text-sm font-semibold uppercase tracking-wide text-white transition hover:-translate-y-0.5 hover:bg-neutral-800"
               onClick={addItem}
+              disabled={!inStock}
             >
-              Add to cart
+              {inStock ? 'Add to cart' : 'Notify when back'}
             </button>
             <button
               type="button"
               className="w-full rounded-full border border-neutral-900 px-5 py-3 text-sm font-semibold uppercase tracking-wide text-neutral-900 transition hover:-translate-y-0.5 hover:bg-neutral-900 hover:text-white"
+              onClick={() => setNotifyOpen(true)}
             >
               Notify me
             </button>
@@ -192,6 +247,25 @@ export function ProductPage({ onNavigate }) {
             <p className="mt-2 text-neutral-700">{item.body}</p>
           </details>
         ))}
+      </div>
+
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold">Customer reviews</h2>
+          <div className="text-sm text-neutral-700">4.7 ★ average</div>
+        </div>
+        <div className="grid gap-3 md:grid-cols-3">
+          {reviews.map((review) => (
+            <article key={review.name} className="space-y-2 rounded-xl border border-neutral-200 bg-white p-3 text-sm shadow-sm">
+              <div className="flex items-center justify-between">
+                <div className="font-semibold text-neutral-900">{review.name}</div>
+                <div className="text-amber-500">{'★'.repeat(review.rating)}</div>
+              </div>
+              <div className="text-xs uppercase tracking-wide text-neutral-500">Size: {review.size}</div>
+              <p className="text-neutral-700">{review.body}</p>
+            </article>
+          ))}
+        </div>
       </div>
 
       <div className="space-y-4 pt-6 md:pt-10">
@@ -304,7 +378,10 @@ export function ProductPage({ onNavigate }) {
                 <button
                   type="button"
                   className="w-full rounded-full border border-neutral-900 px-5 py-3 text-sm font-semibold uppercase tracking-wide text-neutral-900 transition hover:-translate-y-0.5 hover:bg-neutral-900 hover:text-white sm:w-auto"
-                  onClick={() => onNavigate?.('home')}
+                  onClick={() => {
+                    setAddedOpen(false)
+                    navigate('/')
+                  }}
                 >
                   Continue shopping
                 </button>
@@ -313,7 +390,7 @@ export function ProductPage({ onNavigate }) {
                   className="w-full rounded-full bg-neutral-900 px-5 py-3 text-sm font-semibold uppercase tracking-wide text-white transition hover:-translate-y-0.5 hover:bg-neutral-800 sm:w-auto"
                   onClick={() => {
                     setAddedOpen(false)
-                    onNavigate?.('cart')
+                    navigate('/cart')
                   }}
                 >
                   View cart
@@ -323,8 +400,96 @@ export function ProductPage({ onNavigate }) {
           </div>
         </div>
       )}
+
+      {sizeGuideOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Size & Fit Guide</h3>
+              <button
+                type="button"
+                className="rounded-full p-2 text-neutral-500 transition hover:bg-neutral-100"
+                onClick={() => setSizeGuideOpen(false)}
+                aria-label="Close size guide"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="mt-2 text-sm text-neutral-700">Measure your favorite tee flat and match to the table below.</p>
+            <div className="mt-4 overflow-hidden rounded-xl border border-neutral-200">
+              <div className="grid grid-cols-5 bg-neutral-50 px-3 py-2 text-xs font-semibold uppercase text-neutral-600">
+                <span>Size</span>
+                <span>Chest</span>
+                <span>Length</span>
+                <span>Shoulder</span>
+                <span>Sleeve</span>
+              </div>
+              <div className="divide-y divide-neutral-200 text-sm text-neutral-800">
+                {[
+                  { size: 'XS', chest: '36 in', length: '26 in', shoulder: '16.5 in', sleeve: '8.5 in' },
+                  { size: 'S', chest: '38 in', length: '27 in', shoulder: '17 in', sleeve: '9 in' },
+                  { size: 'M', chest: '40 in', length: '28 in', shoulder: '17.5 in', sleeve: '9.25 in' },
+                  { size: 'L', chest: '42 in', length: '29 in', shoulder: '18 in', sleeve: '9.5 in' },
+                  { size: 'XL', chest: '44 in', length: '30 in', shoulder: '18.5 in', sleeve: '9.75 in' },
+                ].map((row) => (
+                  <div key={row.size} className="grid grid-cols-5 px-3 py-2">
+                    <span className="font-semibold">{row.size}</span>
+                    <span>{row.chest}</span>
+                    <span>{row.length}</span>
+                    <span>{row.shoulder}</span>
+                    <span>{row.sleeve}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {notifyOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Notify me</h3>
+              <button
+                type="button"
+                className="rounded-full p-2 text-neutral-500 transition hover:bg-neutral-100"
+                onClick={() => setNotifyOpen(false)}
+                aria-label="Close notification modal"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="mt-2 text-sm text-neutral-700">
+              We&apos;ll email you when {product.name} is back in stock for size {selectedSize} in {selectedColor}.
+            </p>
+            <form
+              className="mt-4 space-y-3 text-sm"
+              onSubmit={(e) => {
+                e.preventDefault()
+                setNotifyOpen(false)
+                setAddedOpen(false)
+              }}
+            >
+              <label className="block">
+                <span className="text-xs font-semibold uppercase tracking-wide text-neutral-600">Email</span>
+                <input
+                  required
+                  type="email"
+                  className="mt-1 w-full rounded-lg border border-neutral-200 px-3 py-2 focus:border-neutral-900 focus:outline-none"
+                  placeholder="you@example.com"
+                />
+              </label>
+              <button
+                type="submit"
+                className="w-full rounded-full bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-neutral-800"
+              >
+                Save notification
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </section>
   )
 }
-import { useState } from 'react'
-import { useStore } from '../../context/StoreContext.jsx'

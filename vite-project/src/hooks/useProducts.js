@@ -12,7 +12,7 @@ export function useProducts() {
       try {
         setLoading(true)
         const data = await fetchProducts()
-        if (mounted) setProducts(data)
+        if (mounted) setProducts(Array.isArray(data) ? data : [])
       } catch (err) {
         if (mounted) setError(err)
       } finally {

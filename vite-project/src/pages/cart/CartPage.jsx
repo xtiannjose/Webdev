@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'
 import { useStore } from '../../context/StoreContext.jsx'
 
 const alsoBought = [
@@ -12,8 +13,9 @@ const recentlyViewed = [
   { name: 'Sunrise Knit Top', price: 380, image: '/womens/9d0027dc-65c2-4e56-9ea7-d5447352e608.jpg' },
 ]
 
-export function CartPage({ onNavigate }) {
+export function CartPage() {
   const { cart, totals, updateQty, removeFromCart, moveToWishlist } = useStore()
+  const navigate = useNavigate()
 
   return (
     <section className="space-y-10">
@@ -112,14 +114,14 @@ export function CartPage({ onNavigate }) {
             <button
               type="button"
               className="w-full rounded-sm bg-red-600 px-5 py-3 text-sm font-semibold uppercase tracking-wide text-white transition hover:-translate-y-0.5 hover:bg-red-700"
-              onClick={() => onNavigate?.('checkout')}
+              onClick={() => navigate('/checkout')}
             >
               Checkout
             </button>
             <button
               type="button"
               className="w-full rounded-sm border border-neutral-900 px-5 py-3 text-sm font-semibold uppercase tracking-wide text-neutral-900 transition hover:-translate-y-0.5 hover:bg-neutral-900 hover:text-white"
-              onClick={() => onNavigate?.('home')}
+              onClick={() => navigate('/')}
             >
               Continue shopping
             </button>
@@ -138,7 +140,7 @@ export function CartPage({ onNavigate }) {
             <button
               type="button"
               className="text-xs font-semibold text-neutral-600 underline-offset-4 hover:underline"
-              onClick={() => onNavigate?.('collection')}
+              onClick={() => navigate('/collection')}
             >
               View more
             </button>
@@ -156,7 +158,7 @@ export function CartPage({ onNavigate }) {
                 <button
                   type="button"
                   className="w-full rounded-full border border-neutral-200 px-3 py-2 text-[11px] font-semibold text-neutral-800 transition hover:border-neutral-300"
-                  onClick={() => onNavigate?.('product')}
+                  onClick={() => navigate('/product')}
                 >
                   View
                 </button>
@@ -171,7 +173,7 @@ export function CartPage({ onNavigate }) {
             <button
               type="button"
               className="text-xs font-semibold text-neutral-600 underline-offset-4 hover:underline"
-              onClick={() => onNavigate?.('home')}
+              onClick={() => navigate('/')}
             >
               Browse more
             </button>
@@ -189,7 +191,7 @@ export function CartPage({ onNavigate }) {
                 <button
                   type="button"
                   className="w-full rounded-full border border-neutral-200 px-3 py-2 text-[11px] font-semibold text-neutral-800 transition hover:border-neutral-300"
-                  onClick={() => onNavigate?.('product')}
+                  onClick={() => navigate('/product')}
                 >
                   View
                 </button>
