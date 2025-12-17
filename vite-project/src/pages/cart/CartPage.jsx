@@ -1,5 +1,8 @@
 import { useNavigate } from 'react-router-dom'
+import { useMemo, useState } from 'react'
 import { useStore } from '../../context/StoreContext.jsx'
+import { validatePromo } from '../../lib/api.js'
+import { useToast } from '../../context/ToastContext.jsx'
 
 const alsoBought = [
   { name: 'Tengen Uzui Tee', price: 370, image: '/mens/50aa801b-bae8-4e0c-93a9-550baf3defdc.jpg' },
@@ -15,6 +18,19 @@ const recentlyViewed = [
 
 export function CartPage() {
   const { cart, totals, updateQty, removeFromCart, moveToWishlist } = useStore()
+  const { addToast } = useToast()
+  const [promoCode, setPromoCode] = useState('')
+  const [promo, setPromo] = useState(null)
+  const [applying, setApplying] = useState(false)
+
+  const discount = useMemo(() => {
+    if (!promo) return 0
+    if (promo.type === 'percent') return Math.round((totals.subtotal * promo.value) / 100)
+    if (promo.type === 'shipping') return Math.min(promo.value, totals.shipping)
+    return 0
+  }, [promo, totals.subtotal, totals.shipping])
+
+  const estimatedTotal = totals.total - discount
   const navigate = useNavigate()
 
   return (
@@ -95,9 +111,15 @@ export function CartPage() {
               <span className="text-neutral-700">Shipping</span>
               <span className="font-semibold text-neutral-900">₱{totals.shipping.toFixed(2)}</span>
             </div>
+            {promo && (
+              <div className="flex items-center justify-between text-emerald-700">
+                <span>Promo ({promo.code})</span>
+                <span>-₱{discount.toFixed(2)}</span>
+              </div>
+            )}
             <div className="flex items-center justify-between border-t border-neutral-200 pt-3 text-sm font-semibold text-neutral-900">
               <span>Order total</span>
-              <span>₱{totals.total.toFixed(2)}</span>
+              <span>₱{estimatedTotal.toFixed(2)}</span>
             </div>
           </div>
 
@@ -105,6 +127,37 @@ export function CartPage() {
             <label className="flex items-center gap-2 text-xs text-neutral-700">
               <input type="checkbox" className="h-4 w-4 rounded border-neutral-300 text-neutral-900" /> Coupon
             </label>
+            <div className="flex items-center gap-2">
+              <input
+                className="flex-1 rounded border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none"
+                placeholder="Promo code"
+                value={promoCode}
+                onChange={(e) => setPromoCode(e.target.value)}
+              />
+              <button
+                type="button"
+                className="rounded-full border border-neutral-900 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-neutral-900 transition hover:-translate-y-0.5 hover:bg-neutral-900 hover:text-white disabled:opacity-60"
+                disabled={applying}
+                onClick={async () => {
+                  setApplying(true)
+                  try {
+                    const res = await validatePromo(promoCode, totals.subtotal)
+                    setPromo(res.promo)
+                    addToast('Promo applied')
+                  } catch (err) {
+                    setPromo(null)
+                    addToast(err.message || 'Invalid promo', 'error')
+                  } finally {
+                    setApplying(false)
+                  }
+                }}
+              >
+                Apply
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-2">
             <label className="flex items-center gap-2 text-xs text-neutral-700">
               <input type="checkbox" className="h-4 w-4 rounded border-neutral-300 text-neutral-900" /> Gift option
             </label>

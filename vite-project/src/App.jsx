@@ -20,9 +20,10 @@ import { StoreProvider } from './context/StoreContext.jsx'
 import { ToastProvider } from './context/ToastContext.jsx'
 import { AuthProvider, useAuth } from './context/AuthContext.jsx'
 import { AuthPage } from './pages/auth/AuthPage.jsx'
-import { CheckoutPage } from './pages/checkout/CheckoutPage.jsx'
+import CheckoutPage from './pages/checkout/CheckoutPage.jsx'
 import { ProfilePage } from './pages/profile/ProfilePage.jsx'
 import { SearchPage } from './pages/search/SearchPage.jsx'
+import { OrderConfirmationPage } from './pages/orders/OrderConfirmationPage.jsx'
 
 export function App() {
   return (
@@ -73,6 +74,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <CheckoutPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/order-confirmation"
+          element={
+            <ProtectedRoute>
+              <OrderConfirmationPage />
             </ProtectedRoute>
           }
         />

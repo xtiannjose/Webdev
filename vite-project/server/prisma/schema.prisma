@@ -58,7 +58,12 @@ model Order {
   userId    String?
   user      User?       @relation(fields: [userId], references: [id])
   total     Int
-  status    String      @default("paid")
+  status    String      @default("pending")
+  paymentStatus String? @default("pending")
+  paymentIntentId String?
+  promoCode String?
+  discount  Int?        @default(0)
+  shippingMethod Json?
   shipping  Json?
   createdAt DateTime    @default(now())
   items     OrderItem[]
@@ -74,4 +79,16 @@ model OrderItem {
   price     Int
   size      String?
   color     String?
+}
+
+model Address {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  name      String
+  line1     String
+  city      String
+  country   String
+  phone     String?
+  createdAt DateTime @default(now())
 }

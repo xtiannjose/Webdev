@@ -14,8 +14,11 @@ A simple, step-by-step guide to run, use, and deploy the full stack (frontend + 
   - Key dirs: `src/pages` (Home, Men, Women, Product, Cart, Checkout, Profile, Auth), `src/components` (Layout/Nav/Footer), `src/context` (Store/Auth/Toast), `public` (images/assets).
 - Backend: Node + Express, Prisma ORM, Postgres (with in-memory fallback if `DATABASE_URL` is missing).
   - Key files: `/server/src/index.js` (API), `/server/src/db.js` (DB helpers), `/server/prisma/schema.prisma` (models), `/server/src/data/products.json` (seed).
+  - Payments (optional): Stripe intent endpoint `/api/payments/intent` if `STRIPE_SECRET` is set; otherwise stubbed.
+  - Shipping/promos: `/api/shipping-methods`, `/api/promo/validate`, checkout stores shipping method, promo code, discount, payment status.
+  - Addresses: `/api/addresses` CRUD for saved addresses.
 - Auth: JWT-based (`/api/auth/signup`, `/api/auth/login`), token stored in localStorage, sent on API calls.
-- Orders/Checkout: Checkout sends shipping + tax, creates orders; Profile shows orders with detail modal.
+- Orders/Checkout: Checkout sends shipping + tax + shipping method + discount + payment intent; Profile shows orders with detail modal.
 - CI: GitHub Actions build workflow in `.github/workflows/ci.yml`.
 
 ---
@@ -37,6 +40,8 @@ CORS_ORIGIN=http://localhost:5173
 DATABASE_URL=postgresql://postgres:CxTxMdVAShYHIZGjpiVeccqsGFGxtoyj@interchange.proxy.rlwy.net:18254/railway
 JWT_SECRET=your-secret
 NODE_ENV=development
+STRIPE_SECRET=sk_test_xxx          # optional; enables Stripe intents
+STRIPE_WEBHOOK_SECRET=whsec_xxx    # optional; verify Stripe webhooks
 ```
 Prisma (only needed after schema changes):
 ```bash
@@ -66,6 +71,7 @@ npm install
 Create `.env`:
 ```
 VITE_API_URL=http://localhost:3000
+VITE_STRIPE_PUBLISHABLE=pk_test_xxx   # optional; enables Stripe CardElement checkout
 ```
 Start Vite:
 ```bash

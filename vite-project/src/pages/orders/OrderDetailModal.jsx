@@ -19,6 +19,12 @@ export function OrderDetailModal({ order, onClose }) {
             <span>Status</span>
             <span className="font-semibold uppercase text-neutral-700">{order.status}</span>
           </div>
+          {order.shipping?.paymentStatus && (
+            <div className="flex items-center justify-between">
+              <span>Payment</span>
+              <span className="font-semibold text-neutral-800">{order.shipping.paymentStatus}</span>
+            </div>
+          )}
           <div className="flex items-center justify-between">
             <span>Total</span>
             <span className="font-semibold text-neutral-900">₱{order.total}</span>
@@ -31,6 +37,14 @@ export function OrderDetailModal({ order, onClose }) {
               <div>
                 {order.shipping.city}, {order.shipping.country}
               </div>
+              {order.shipping.shippingMethod && (
+                <div className="text-xs text-neutral-500">
+                  {order.shipping.shippingMethod.label} · ₱{order.shipping.shippingMethod.fee} · {order.shipping.shippingMethod.eta}
+                </div>
+              )}
+              {order.shipping.promoCode && (
+                <div className="text-xs text-emerald-700">Promo: {order.shipping.promoCode}</div>
+              )}
               {order.shipping.notes && <div className="text-neutral-500">Notes: {order.shipping.notes}</div>}
               {(order.shipping.shippingFee || order.shipping.tax) && (
                 <div className="pt-1 text-neutral-600">

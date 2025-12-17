@@ -7,24 +7,35 @@ import {
   createOrder,
   createUser,
   findUserByEmail,
+  listAddresses,
   listCart,
   listOrders,
   listProducts,
+  listShippingMethods,
   listWishlist,
   removeCart,
+  addAddress,
+  deleteAddress,
   removeWishlist,
   updateCart,
+  validatePromo,
+  updatePaymentStatus,
 } from './db.js'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
+import Stripe from 'stripe'
 
 dotenv.config()
 
 const app = express()
 const PORT = process.env.PORT || 3000
 const CORS_ORIGIN = process.env.CORS_ORIGIN || '*'
+const stripeSecret = process.env.STRIPE_SECRET
+const stripe = stripeSecret ? new Stripe(stripeSecret) : null
+const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET
 
 app.use(cors({ origin: CORS_ORIGIN, credentials: true }))
+app.use('/api/webhooks/stripe', express.raw({ type: 'application/json' }))
 app.use(express.json())
 
 function requireAuth(req, res, next) {
@@ -120,15 +131,84 @@ app.delete('/api/wishlist/:id', requireAuth, async (req, res) => {
   res.json({ items })
 })
 
+app.get('/api/shipping-methods', (req, res) => {
+  res.json({ methods: listShippingMethods() })
+})
+
+app.post('/api/promo/validate', (req, res) => {
+  const { code, subtotal } = req.body
+  const result = validatePromo(code, Number(subtotal) || 0)
+  if (!result) return res.status(400).json({ error: 'Invalid promo code' })
+  res.json({ promo: result })
+})
+
+app.get('/api/addresses', requireAuth, async (req, res) => {
+  const addresses = await listAddresses(req.user.sub)
+  res.json({ addresses })
+})
+
+app.post('/api/addresses', requireAuth, async (req, res) => {
+  const { name, line1, city, country, phone } = req.body
+  if (!name || !line1) return res.status(400).json({ error: 'Name and address are required' })
+  const address = await addAddress(req.user.sub, { name, line1, city, country, phone })
+  const addresses = await listAddresses(req.user.sub)
+  res.json({ address, addresses })
+})
+
+app.delete('/api/addresses/:id', requireAuth, async (req, res) => {
+  await deleteAddress(req.user.sub, req.params.id)
+  const addresses = await listAddresses(req.user.sub)
+  res.json({ addresses })
+})
+
+app.post('/api/payments/intent', requireAuth, async (req, res) => {
+  try {
+    const { amount, currency = 'php' } = req.body
+    if (!amount || amount <= 0) return res.status(400).json({ error: 'Invalid amount' })
+    if (stripe) {
+      const intent = await stripe.paymentIntents.create({
+        amount: Math.round(Number(amount) * 100),
+        currency,
+        payment_method_types: ['card'],
+        metadata: { userId: req.user.sub },
+      })
+      return res.json({ clientSecret: intent.client_secret })
+    }
+    return res.json({ clientSecret: 'test_client_secret_stub' })
+  } catch (err) {
+    return res.status(400).json({ error: err.message || 'Payment intent failed' })
+  }
+})
+
 app.post('/api/checkout', requireAuth, async (req, res) => {
-  const { shipping } = req.body
-  const order = await createOrder(shipping)
+  const { shipping, paymentIntentId } = req.body
+  const order = await createOrder({ ...shipping, paymentIntentId }, req.user.sub)
+  console.log('Stub email: order confirmation for', order.id)
   res.json({ order })
 })
 
 app.get('/api/orders', requireAuth, async (req, res) => {
   const orders = await listOrders()
   res.json({ orders })
+})
+
+app.post('/api/webhooks/stripe', async (req, res) => {
+  if (!stripe || !stripeWebhookSecret) return res.status(200).json({ received: true })
+  const sig = req.headers['stripe-signature']
+  try {
+    const event = stripe.webhooks.constructEvent(req.body, sig, stripeWebhookSecret)
+    if (event.type === 'payment_intent.succeeded') {
+      const pi = event.data.object
+      await updatePaymentStatus(pi.id, 'succeeded')
+    } else if (event.type === 'payment_intent.payment_failed') {
+      const pi = event.data.object
+      await updatePaymentStatus(pi.id, 'payment_failed')
+    }
+    res.json({ received: true })
+  } catch (err) {
+    console.error('Webhook error', err.message)
+    res.status(400).send(`Webhook error: ${err.message}`)
+  }
 })
 
 app.listen(PORT, () => {

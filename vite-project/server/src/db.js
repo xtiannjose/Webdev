@@ -1,6 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import crypto from 'node:crypto'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -26,7 +27,17 @@ let memory = {
   wishlist: [],
   orders: [],
   users: [],
+  addresses: {},
 }
+const shippingMethods = [
+  { id: 'standard', label: 'Standard', eta: '3-5 business days', fee: 120 },
+  { id: 'express', label: 'Express', eta: '1-2 business days', fee: 220 },
+  { id: 'pickup', label: 'Click & Collect', eta: 'Ready in 24 hours', fee: 0 },
+]
+const promoCodes = [
+  { code: 'WELCOME10', type: 'percent', value: 10, minSubtotal: 500 },
+  { code: 'SHIPFREE', type: 'shipping', value: 120, minSubtotal: 800 },
+]
 
 export async function listProducts() {
   const client = await getPrisma()
@@ -126,19 +137,26 @@ export async function removeWishlist(id) {
   return memory.wishlist
 }
 
-export async function createOrder(shipping) {
+export async function createOrder(shipping, userId = null) {
   const client = await getPrisma()
   if (client) {
     const items = await client.cartItem.findMany({ include: { product: true } })
     const subtotal = items.reduce((sum, i) => sum + i.qty * i.product.price, 0)
     const shippingFee = shipping?.shippingFee ?? 0
     const tax = shipping?.tax ?? 0
-    const total = subtotal + shippingFee + tax
+    const discount = shipping?.discount ?? 0
+    const total = subtotal + shippingFee + tax - discount
     const order = await client.order.create({
       data: {
         total,
-        status: 'paid',
-        shipping: shipping || null,
+        userId: userId || undefined,
+        status: 'pending',
+        paymentStatus: shipping?.paymentStatus || 'pending',
+        paymentIntentId: shipping?.paymentIntentId,
+        promoCode: shipping?.promoCode,
+        discount,
+        shippingMethod: shipping?.shippingMethod || null,
+        shipping: { ...shipping, subtotal },
         items: {
           create: items.map((i) => ({
             productId: i.productId,
@@ -157,12 +175,19 @@ export async function createOrder(shipping) {
   const subtotal = memory.cart.reduce((sum, i) => sum + i.price * i.qty, 0)
   const shippingFee = shipping?.shippingFee ?? 0
   const tax = shipping?.tax ?? 0
-  const total = subtotal + shippingFee + tax
+  const discount = shipping?.discount ?? 0
+  const total = subtotal + shippingFee + tax - discount
   const order = {
     id: crypto.randomUUID(),
     total,
-    status: 'paid',
-    shipping: shipping || null,
+    userId,
+    status: 'pending',
+    paymentStatus: shipping?.paymentStatus || 'pending',
+    paymentIntentId: shipping?.paymentIntentId,
+    promoCode: shipping?.promoCode,
+    discount,
+    shippingMethod: shipping?.shippingMethod || null,
+    shipping: { ...shipping, subtotal },
     items: memory.cart.map((i) => ({ ...i })),
     createdAt: new Date().toISOString(),
   }
@@ -177,6 +202,22 @@ export async function listOrders() {
     return client.order.findMany({ include: { items: { include: { product: true } } }, orderBy: { createdAt: 'desc' } })
   }
   return memory.orders
+}
+
+export async function updatePaymentStatus(paymentIntentId, status) {
+  if (!paymentIntentId) return null
+  const client = await getPrisma()
+  if (client) {
+    const order = await client.order.findFirst({ where: { paymentIntentId } })
+    if (!order) return null
+    return client.order.update({ where: { id: order.id }, data: { paymentStatus: status, status: status === 'succeeded' ? 'paid' : status } })
+  }
+  const order = memory.orders.find((o) => o.paymentIntentId === paymentIntentId)
+  if (order) {
+    order.paymentStatus = status
+    order.status = status === 'succeeded' ? 'paid' : status
+  }
+  return order
 }
 
 export async function createUser(email, passwordHash) {
@@ -195,4 +236,46 @@ export async function findUserByEmail(email) {
   const client = await getPrisma()
   if (client) return client.user.findUnique({ where: { email } })
   return memory.users.find((u) => u.email === email) || null
+}
+
+export async function listAddresses(userId) {
+  if (!userId) return []
+  const client = await getPrisma()
+  if (client) {
+    return client.address.findMany({ where: { userId }, orderBy: { createdAt: 'desc' } })
+  }
+  return memory.addresses[userId] || []
+}
+
+export async function addAddress(userId, address) {
+  if (!userId) return null
+  const client = await getPrisma()
+  if (client) {
+    return client.address.create({ data: { userId, ...address } })
+  }
+  const entry = { id: crypto.randomUUID(), ...address }
+  if (!memory.addresses[userId]) memory.addresses[userId] = []
+  memory.addresses[userId].push(entry)
+  return entry
+}
+
+export async function deleteAddress(userId, id) {
+  if (!userId || !id) return
+  const client = await getPrisma()
+  if (client) {
+    return client.address.delete({ where: { id } })
+  }
+  memory.addresses[userId] = (memory.addresses[userId] || []).filter((a) => a.id !== id)
+}
+
+export function listShippingMethods() {
+  return shippingMethods
+}
+
+export function validatePromo(code, subtotal) {
+  if (!code) return null
+  const found = promoCodes.find((p) => p.code.toLowerCase() === code.toLowerCase())
+  if (!found) return null
+  if (found.minSubtotal && subtotal < found.minSubtotal) return null
+  return found
 }

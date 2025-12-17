@@ -59,10 +59,34 @@ export async function fetchProducts() {
   return request('/api/products')
 }
 
-export async function checkout(shipping) {
-  return request('/api/checkout', { method: 'POST', body: JSON.stringify({ shipping }) })
+export async function checkout(shipping, paymentIntentId) {
+  return request('/api/checkout', { method: 'POST', body: JSON.stringify({ shipping, paymentIntentId }) })
 }
 
 export async function fetchOrders() {
   return request('/api/orders')
+}
+
+export async function fetchShippingMethods() {
+  return request('/api/shipping-methods')
+}
+
+export async function validatePromo(code, subtotal) {
+  return request('/api/promo/validate', { method: 'POST', body: JSON.stringify({ code, subtotal }) })
+}
+
+export async function createPaymentIntent(amount) {
+  return request('/api/payments/intent', { method: 'POST', body: JSON.stringify({ amount }) })
+}
+
+export async function fetchAddresses() {
+  return request('/api/addresses')
+}
+
+export async function addAddress(address) {
+  return request('/api/addresses', { method: 'POST', body: JSON.stringify(address) })
+}
+
+export async function deleteAddress(id) {
+  return request(`/api/addresses/${id}`, { method: 'DELETE' })
 }
