@@ -30,11 +30,15 @@ dotenv.config()
 const app = express()
 const PORT = process.env.PORT || 3000
 const CORS_ORIGIN = process.env.CORS_ORIGIN || '*'
+const jwtSecret = process.env.JWT_SECRET || (process.env.NODE_ENV === 'production' ? null : 'dev-secret')
+if (!jwtSecret) {
+  throw new Error('JWT_SECRET must be set in production')
+}
 const stripeSecret = process.env.STRIPE_SECRET
 const stripe = stripeSecret ? new Stripe(stripeSecret) : null
 const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET
 
-app.use(cors({ origin: CORS_ORIGIN, credentials: true }))
+app.use(cors({ origin: CORS_ORIGIN, credentials: CORS_ORIGIN !== '*' }))
 app.use('/api/webhooks/stripe', express.raw({ type: 'application/json' }))
 app.use(express.json())
 
@@ -43,7 +47,7 @@ function requireAuth(req, res, next) {
   if (!auth?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' })
   const token = auth.slice('Bearer '.length)
   try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET || 'dev-secret')
+    const payload = jwt.verify(token, jwtSecret)
     req.user = payload
     next()
   } catch {
@@ -62,7 +66,7 @@ app.post('/api/auth/signup', async (req, res) => {
   if (existing) return res.status(409).json({ error: 'User exists' })
   const hash = await bcrypt.hash(password, 10)
   const user = await createUser(email, hash)
-  const token = jwt.sign({ sub: user.id, email: user.email }, process.env.JWT_SECRET || 'dev-secret', { expiresIn: '7d' })
+  const token = jwt.sign({ sub: user.id, email: user.email }, jwtSecret, { expiresIn: '7d' })
   res.json({ token, user: { id: user.id, email: user.email } })
 })
 
@@ -73,7 +77,7 @@ app.post('/api/auth/login', async (req, res) => {
   if (!user) return res.status(401).json({ error: 'Invalid credentials' })
   const valid = await bcrypt.compare(password, user.password)
   if (!valid) return res.status(401).json({ error: 'Invalid credentials' })
-  const token = jwt.sign({ sub: user.id, email: user.email }, process.env.JWT_SECRET || 'dev-secret', { expiresIn: '7d' })
+  const token = jwt.sign({ sub: user.id, email: user.email }, jwtSecret, { expiresIn: '7d' })
   res.json({ token, user: { id: user.id, email: user.email } })
 })
 
@@ -82,52 +86,52 @@ app.get('/api/products', async (req, res) => {
   res.json(items)
 })
 
-app.get('/api/cart', async (req, res) => {
-  const items = await listCart()
+app.get('/api/cart', requireAuth, async (req, res) => {
+  const items = await listCart(req.user.sub)
   res.json({ items })
 })
 
 app.post('/api/cart', requireAuth, async (req, res) => {
   const item = req.body
   if (!item?.id || !item?.name || !item?.price) return res.status(400).json({ error: 'Invalid item' })
-  await addCart(item)
-  const items = await listCart()
+  await addCart(req.user.sub, item)
+  const items = await listCart(req.user.sub)
   res.json({ items })
 })
 
 app.patch('/api/cart/:id', requireAuth, async (req, res) => {
   const { id } = req.params
   const { qty, size } = req.body
-  await updateCart(id, size, Number(qty) || 1)
-  const items = await listCart()
+  await updateCart(req.user.sub, id, size, Number(qty) || 1)
+  const items = await listCart(req.user.sub)
   res.json({ items })
 })
 
 app.delete('/api/cart/:id', requireAuth, async (req, res) => {
   const { id } = req.params
   const { size } = req.query
-  await removeCart(id, size)
-  const items = await listCart()
+  await removeCart(req.user.sub, id, size)
+  const items = await listCart(req.user.sub)
   res.json({ items })
 })
 
-app.get('/api/wishlist', async (req, res) => {
-  const items = await listWishlist()
+app.get('/api/wishlist', requireAuth, async (req, res) => {
+  const items = await listWishlist(req.user.sub)
   res.json({ items })
 })
 
 app.post('/api/wishlist', requireAuth, async (req, res) => {
   const item = req.body
   if (!item?.id || !item?.name) return res.status(400).json({ error: 'Invalid item' })
-  await addWishlist(item)
-  const items = await listWishlist()
+  await addWishlist(req.user.sub, item)
+  const items = await listWishlist(req.user.sub)
   res.json({ items })
 })
 
 app.delete('/api/wishlist/:id', requireAuth, async (req, res) => {
   const { id } = req.params
-  await removeWishlist(id)
-  const items = await listWishlist()
+  await removeWishlist(req.user.sub, id)
+  const items = await listWishlist(req.user.sub)
   res.json({ items })
 })
 
@@ -188,7 +192,7 @@ app.post('/api/checkout', requireAuth, async (req, res) => {
 })
 
 app.get('/api/orders', requireAuth, async (req, res) => {
-  const orders = await listOrders()
+  const orders = await listOrders(req.user.sub)
   res.json({ orders })
 })
 

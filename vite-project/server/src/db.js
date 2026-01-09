@@ -23,9 +23,9 @@ async function getPrisma() {
 }
 
 let memory = {
-  cart: [],
-  wishlist: [],
-  orders: [],
+  carts: {},
+  wishlists: {},
+  orders: {},
   users: [],
   addresses: {},
 }
@@ -45,16 +45,20 @@ export async function listProducts() {
   return productsData
 }
 
-export async function listCart() {
+export async function listCart(userId) {
+  if (!userId) return []
   const client = await getPrisma()
-  if (client) return client.cartItem.findMany({ include: { product: true } })
-  return memory.cart
+  if (client) return client.cartItem.findMany({ where: { userId }, include: { product: true } })
+  return memory.carts[userId] || []
 }
 
-export async function addCart(item) {
+export async function addCart(userId, item) {
+  if (!userId) return []
   const client = await getPrisma()
   if (client) {
-    const existing = await client.cartItem.findFirst({ where: { productId: item.id, size: item.size || undefined } })
+    const existing = await client.cartItem.findFirst({
+      where: { userId, productId: item.id, size: item.size || undefined },
+    })
     if (existing) {
       return client.cartItem.update({
         where: { id: existing.id },
@@ -63,6 +67,7 @@ export async function addCart(item) {
     }
     return client.cartItem.create({
       data: {
+        userId,
         productId: item.id,
         qty: item.qty || 1,
         size: item.size,
@@ -70,77 +75,94 @@ export async function addCart(item) {
       },
     })
   }
-  const existing = memory.cart.find((p) => p.id === item.id && p.size === item.size)
+  if (!memory.carts[userId]) memory.carts[userId] = []
+  const existing = memory.carts[userId].find((p) => p.id === item.id && p.size === item.size)
   if (existing) {
     existing.qty += item.qty || 1
   } else {
-    memory.cart.push({ ...item, qty: item.qty || 1 })
+    memory.carts[userId].push({ ...item, qty: item.qty || 1 })
   }
-  return memory.cart
+  return memory.carts[userId]
 }
 
-export async function updateCart(id, size, qty) {
+export async function updateCart(userId, id, size, qty) {
+  if (!userId) return []
   const client = await getPrisma()
   if (client) {
-    const found = await client.cartItem.findFirst({ where: { productId: id, size: size || undefined } })
+    const found = await client.cartItem.findFirst({
+      where: { userId, productId: id, size: size || undefined },
+    })
     if (!found) return
     return client.cartItem.update({ where: { id: found.id }, data: { qty } })
   }
-  memory.cart = memory.cart.map((item) => (item.id === id && item.size === size ? { ...item, qty } : item))
-  return memory.cart
+  memory.carts[userId] = (memory.carts[userId] || []).map((item) =>
+    item.id === id && item.size === size ? { ...item, qty } : item
+  )
+  return memory.carts[userId]
 }
 
-export async function removeCart(id, size) {
+export async function removeCart(userId, id, size) {
+  if (!userId) return []
   const client = await getPrisma()
   if (client) {
-    const found = await client.cartItem.findFirst({ where: { productId: id, size: size || undefined } })
+    const found = await client.cartItem.findFirst({
+      where: { userId, productId: id, size: size || undefined },
+    })
     if (found) {
       await client.cartItem.delete({ where: { id: found.id } })
     }
     return
   }
-  memory.cart = memory.cart.filter((p) => !(p.id === id && (size ? p.size === size : true)))
-  return memory.cart
+  memory.carts[userId] = (memory.carts[userId] || []).filter(
+    (p) => !(p.id === id && (size ? p.size === size : true))
+  )
+  return memory.carts[userId]
 }
 
-export async function listWishlist() {
+export async function listWishlist(userId) {
+  if (!userId) return []
   const client = await getPrisma()
-  if (client) return client.wishlistItem.findMany({ include: { product: true } })
-  return memory.wishlist
+  if (client) return client.wishlistItem.findMany({ where: { userId }, include: { product: true } })
+  return memory.wishlists[userId] || []
 }
 
-export async function addWishlist(item) {
+export async function addWishlist(userId, item) {
+  if (!userId) return []
   const client = await getPrisma()
   if (client) {
-    const existing = await client.wishlistItem.findFirst({ where: { productId: item.id } })
+    const existing = await client.wishlistItem.findFirst({ where: { userId, productId: item.id } })
     if (existing) return existing
     return client.wishlistItem.create({
       data: {
+        userId,
         productId: item.id,
       },
     })
   }
-  if (!memory.wishlist.find((w) => w.id === item.id)) {
-    memory.wishlist.push(item)
+  if (!memory.wishlists[userId]) memory.wishlists[userId] = []
+  if (!memory.wishlists[userId].find((w) => w.id === item.id)) {
+    memory.wishlists[userId].push(item)
   }
-  return memory.wishlist
+  return memory.wishlists[userId]
 }
 
-export async function removeWishlist(id) {
+export async function removeWishlist(userId, id) {
+  if (!userId) return []
   const client = await getPrisma()
   if (client) {
-    const existing = await client.wishlistItem.findFirst({ where: { productId: id } })
+    const existing = await client.wishlistItem.findFirst({ where: { userId, productId: id } })
     if (existing) await client.wishlistItem.delete({ where: { id: existing.id } })
     return
   }
-  memory.wishlist = memory.wishlist.filter((w) => w.id !== id)
-  return memory.wishlist
+  memory.wishlists[userId] = (memory.wishlists[userId] || []).filter((w) => w.id !== id)
+  return memory.wishlists[userId]
 }
 
 export async function createOrder(shipping, userId = null) {
+  if (!userId) return null
   const client = await getPrisma()
   if (client) {
-    const items = await client.cartItem.findMany({ include: { product: true } })
+    const items = await client.cartItem.findMany({ where: { userId }, include: { product: true } })
     const subtotal = items.reduce((sum, i) => sum + i.qty * i.product.price, 0)
     const shippingFee = shipping?.shippingFee ?? 0
     const tax = shipping?.tax ?? 0
@@ -169,10 +191,11 @@ export async function createOrder(shipping, userId = null) {
       },
       include: { items: { include: { product: true } } },
     })
-    await client.cartItem.deleteMany({})
+    await client.cartItem.deleteMany({ where: { userId } })
     return order
   }
-  const subtotal = memory.cart.reduce((sum, i) => sum + i.price * i.qty, 0)
+  const cart = memory.carts[userId] || []
+  const subtotal = cart.reduce((sum, i) => sum + i.price * i.qty, 0)
   const shippingFee = shipping?.shippingFee ?? 0
   const tax = shipping?.tax ?? 0
   const discount = shipping?.discount ?? 0
@@ -188,20 +211,26 @@ export async function createOrder(shipping, userId = null) {
     discount,
     shippingMethod: shipping?.shippingMethod || null,
     shipping: { ...shipping, subtotal },
-    items: memory.cart.map((i) => ({ ...i })),
+    items: cart.map((i) => ({ ...i })),
     createdAt: new Date().toISOString(),
   }
-  memory.orders.push(order)
-  memory.cart = []
+  if (!memory.orders[userId]) memory.orders[userId] = []
+  memory.orders[userId].push(order)
+  memory.carts[userId] = []
   return order
 }
 
-export async function listOrders() {
+export async function listOrders(userId) {
+  if (!userId) return []
   const client = await getPrisma()
   if (client) {
-    return client.order.findMany({ include: { items: { include: { product: true } } }, orderBy: { createdAt: 'desc' } })
+    return client.order.findMany({
+      where: { userId },
+      include: { items: { include: { product: true } } },
+      orderBy: { createdAt: 'desc' },
+    })
   }
-  return memory.orders
+  return memory.orders[userId] || []
 }
 
 export async function updatePaymentStatus(paymentIntentId, status) {
@@ -263,7 +292,7 @@ export async function deleteAddress(userId, id) {
   if (!userId || !id) return
   const client = await getPrisma()
   if (client) {
-    return client.address.delete({ where: { id } })
+    return client.address.deleteMany({ where: { id, userId } })
   }
   memory.addresses[userId] = (memory.addresses[userId] || []).filter((a) => a.id !== id)
 }
